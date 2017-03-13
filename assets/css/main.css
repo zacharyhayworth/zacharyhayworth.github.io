@@ -8,8 +8,13 @@
 */
 
 @font-face {
-    font-family: customFont;
-    src: url(custom_font.otf);
+    font-family: "Butler";
+    src: url("fonts/Butler_Regular.otf");
+}
+@font-face {
+    font-family: "Bulter";
+    src: url("fonts/Butler_Bold.otf");
+    font-weight: bold;
 }
 
 /* Reset */
