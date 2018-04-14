@@ -1,258 +1,99 @@
 /*
-	Transit by Pixelarity
+	Alpha by Pixelarity
 	pixelarity.com | hello@pixelarity.com
 	License: pixelarity.com/license
 */
 
 (function($) {
 
-	var settings = {
-
-		// Parallax background effect?
-			parallax: true,
-
-		// Parallax factor (lower = more intense, higher = less intense).
-			parallaxFactor: 5,
-
-		// Slider speed (in ms).
-			sliderSpeed: 1000
-
-	};
-
 	skel.breakpoints({
-		xlarge: '(max-width: 1680px)',
-		large: '(max-width: 1280px)',
-		medium: '(max-width: 980px)',
-		small: '(max-width: 736px)',
-		xsmall: '(max-width: 480px)',
-		xxsmall: '(max-width: 360px)'
+		wide: '(max-width: 1680px)',
+		normal: '(max-width: 1280px)',
+		narrow: '(max-width: 980px)',
+		narrower: '(max-width: 840px)',
+		mobile: '(max-width: 736px)',
+		mobilep: '(max-width: 480px)'
 	});
 
 	$(function() {
 
 		var	$window = $(window),
-			$body = $('body');
+			$body = $('body'),
+			$header = $('#header'),
+			$banner = $('#banner');
 
-		// Disable animations/transitions until the page has loaded.
-			$body.addClass('is-loading');
+		// Fix: Placeholder polyfill.
+			$('form').placeholder();
 
-			$window.on('load', function() {
-				window.setTimeout(function() {
-					$body.removeClass('is-loading');
-				}, 100);
-			});
-
-		// Tweaks/fixes.
-
-			// Polyfill: Object fit.
-				if (!skel.canUse('object-fit')) {
-
-					$('.image[data-position]').each(function() {
-
-						var $this = $(this),
-							$img = $this.children('img');
-
-						// Apply img as background.
-							$this
-								.css('background-image', 'url("' + $img.attr('src') + '")')
-								.css('background-position', $this.data('position'))
-								.css('background-size', 'cover')
-								.css('background-repeat', 'no-repeat');
-
-						// Hide img.
-							$img
-								.css('opacity', '0');
-
-					});
-
-				}
-
-			// IE-specific fixes.
-				if (skel.vars.browser == 'ie'
-				||	skel.vars.browser == 'edge')
-					$body.addClass('is-ie');
-
-		// Prioritize "important" elements on medium.
-			skel.on('+medium -medium', function() {
+		// Prioritize "important" elements on narrower.
+			skel.on('+narrower -narrower', function() {
 				$.prioritize(
-					'.important\\28 medium\\29',
-					skel.breakpoint('medium').active
+					'.important\\28 narrower\\29',
+					skel.breakpoint('narrower').active
 				);
 			});
 
-		// Menu.
-			$('#menu')
-				.append('<a href="#menu" class="close"></a>')
-				.appendTo($body)
-				.panel({
-					delay: 500,
-					hideOnClick: true,
-					hideOnSwipe: true,
-					resetScroll: true,
-					resetForms: true,
-					side: 'right',
-					target: $body,
-					visibleClass: 'is-menu-visible'
-				});
+		// Dropdowns.
+			$('#nav > ul').dropotron({
+				alignment: 'right'
+			});
 
-		// Scrolly.
-			$('.scrolly').scrolly();
+		// Off-Canvas Navigation.
 
-		// Parallax background.
+			// Navigation Button.
+				$(
+					'<div id="navButton">' +
+						'<a href="#navPanel" class="toggle"></a>' +
+					'</div>'
+				)
+					.appendTo($body);
 
-			// Disable parallax on IE (smooth scrolling is jerky), and on mobile platforms (= better performance).
-				if (skel.vars.browser == 'ie'
-				||	skel.vars.browser == 'edge'
-				||	skel.vars.mobile)
-					settings.parallax = false;
-
-			if (settings.parallax) {
-
-				var $dummy = $(), $bg;
-
-				$window
-					.on('scroll.transit_parallax', function() {
-
-						// Adjust background position.
-						// Note: If you've removed the background overlay image, remove the "top left, " bit.
-							$bg.css('background-position', 'top left, center ' + (-1 * (parseInt($window.scrollTop()) / settings.parallaxFactor)) + 'px');
-
-					})
-					.on('resize.transit_parallax', function() {
-
-						// If we're in a situation where we need to temporarily disable parallax, do so.
-						// Note: If you've removed the background overlay image, remove the "top left, " bit.
-							if (skel.breakpoint('medium').active) {
-
-								$body.css('background-position', 'top left, top center');
-								$bg = $dummy;
-
-							}
-
-						// Otherwise, continue as normal.
-							else
-								$bg = $body;
-
-						// Trigger scroll handler.
-							$window.triggerHandler('scroll.transit_parallax');
-
+			// Navigation Panel.
+				$(
+					'<div id="navPanel">' +
+						'<nav>' +
+							$('#nav').navList() +
+						'</nav>' +
+					'</div>'
+				)
+					.appendTo($body)
+					.panel({
+						delay: 500,
+						hideOnClick: true,
+						hideOnSwipe: true,
+						resetScroll: true,
+						resetForms: true,
+						side: 'left',
+						target: $body,
+						visibleClass: 'navPanel-visible'
 					});
 
-				$window.on('load.transit_parallax', function() {
-					setTimeout(function() {
-						$window.trigger('resize.transit_parallax');
-					}, 0);
+			// Fix: Remove navPanel transitions on WP<10 (poor/buggy performance).
+				if (skel.vars.os == 'wp' && skel.vars.osVersion < 10)
+					$('#navButton, #navPanel, #page-wrapper')
+						.css('transition', 'none');
+
+		// Header.
+		// If the header is using "alt" styling and #banner is present, use scrollwatch
+		// to revert it back to normal styling once the user scrolls past the banner.
+		// Note: This is disabled on mobile devices.
+			if (!skel.vars.mobile
+			&&	$header.hasClass('alt')
+			&&	$banner.length > 0) {
+
+				$window.on('load', function() {
+
+					$banner.scrollwatch({
+						delay:		0,
+						range:		0.5,
+						anchor:		'top',
+						on:			function() { $header.addClass('alt reveal'); },
+						off:		function() { $header.removeClass('alt'); }
+					});
+
 				});
 
 			}
-
-		// Slider.
-			$('.slider-wrapper').each(function() {
-
-				var $this = $(this),
-					$slider = $this.children('.slider'),
-					$indicators = $('<div class="indicators" />').appendTo($this),
-					$slide = $slider.children(),
-					$indicator,
-					locked = false,
-					i;
-
-				// Indicators.
-					for (i=0; i < $slide.length; i++)
-						$('<a href="#">' + (i + 1) + '</a>')
-							.appendTo($indicators);
-
-					$indicator = $indicators.children('a')
-						.each(function(index) {
-
-							var	$this = $(this),
-								$target = $slide.eq(index);
-
-							$this.on('click', function(event, initial) {
-
-								var	x;
-
-								// Prevent default.
-									event.stopPropagation();
-									event.preventDefault();
-
-								// Already selected?
-									if ($this.hasClass('active'))
-										return;
-
-								// Locked?
-									if (locked)
-										return;
-
-									locked = true;
-
-								// Calculate scroll position.
-									x = ($target.position().left + $slider.scrollLeft()) - (Math.max(0, $slider.width() - $target.outerWidth()) / 2);
-
-								// Scroll.
-									$slide.addClass('inactive');
-									$indicator.removeClass('active');
-									$this.addClass('active');
-
-									if (initial) {
-
-										$slider.scrollLeft(x);
-										$target.removeClass('inactive');
-										locked = false;
-
-									}
-									else {
-
-										$slider
-											.stop()
-											.animate(
-												{ scrollLeft: x },
-												settings.sliderSpeed,
-												'swing'
-											);
-
-										setTimeout(function() {
-											$target.removeClass('inactive');
-											locked = false;
-										}, Math.max(0, settings.sliderSpeed - 250));
-
-									}
-
-							});
-
-						});
-
-				// Slides.
-					$slide.on('click', function(event, initial) {
-
-						var $this = $(this);
-
-						$indicator.eq($this.index())
-							.trigger('click', initial);
-
-					});
-
-					$slide.on('click', 'a', function(event) {
-
-						if ($(this).parents('article').hasClass('inactive'))
-							event.preventDefault();
-
-					});
-
-				// Re-position on resize.
-					$window.on('resize.transit_slider', function(event) {
-
-						var $target = $slide.not('.inactive');
-
-						$slider.scrollLeft(($target.position().left + $slider.scrollLeft()) - (Math.max(0, $slider.width() - $target.outerWidth()) / 2));
-
-					});
-
-				// Initialize.
-					$slide.filter('.initial')
-						.trigger('click', true);
-
-			});
 
 	});
 
