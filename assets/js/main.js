@@ -1,240 +1,256 @@
 /*
-	Astral by HTML5 UP
-	html5up.net | @ajlkn
-	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+	Transit by Pixelarity
+	pixelarity.com | hello@pixelarity.com
+	License: pixelarity.com/license
 */
 
 (function($) {
 
 	var settings = {
 
-		// Speed to resize panel.
-			resizeSpeed: 600,
+		// Parallax background effect?
+			parallax: true,
 
-		// Speed to fade in/out.
-			fadeSpeed: 300,
+		// Parallax factor (lower = more intense, higher = less intense).
+			parallaxFactor: 5,
 
-		// Size factor.
-			sizeFactor: 11.5,
-
-		// Minimum point size.
-			sizeMin: 15,
-
-		// Maximum point size.
-			sizeMax: 20
+		// Slider speed (in ms).
+			sliderSpeed: 1000
 
 	};
 
-	var $window = $(window);
+	skel.breakpoints({
+		xlarge: '(max-width: 1680px)',
+		large: '(max-width: 1280px)',
+		medium: '(max-width: 980px)',
+		small: '(max-width: 736px)',
+		xsmall: '(max-width: 480px)',
+		xxsmall: '(max-width: 360px)'
+	});
 
-	$window.on('load', function() {
+	$(function() {
 
-		skel
-			.breakpoints({
-				desktop: '(min-width: 737px)',
-				mobile: '(max-width: 736px)'
-			})
-			.viewport({
-				breakpoints: {
-					desktop: {
-						width: 1080,
-						scalable: false
-					}
-				}
-			})
-			.on('+desktop', function() {
+		var	$window = $(window),
+			$body = $('body');
 
-				var	$body = $('body'),
-					$main = $('#main'),
-					$panels = $main.find('.panel'),
-					$hbw = $('html,body,window'),
-					$footer = $('#footer'),
-					$wrapper = $('#wrapper'),
-					$nav = $('#nav'), $nav_links = $nav.find('a'),
-					$jumplinks = $('.jumplink'),
-					$form = $('form'),
-					panels = [],
-					activePanelId = null,
-					firstPanelId = null,
-					isLocked = false,
-					hash = window.location.hash.substring(1);
+		// Disable animations/transitions until the page has loaded.
+			$body.addClass('is-loading');
 
-				if (skel.vars.touch) {
+			$window.on('load', function() {
+				window.setTimeout(function() {
+					$body.removeClass('is-loading');
+				}, 100);
+			});
 
-					settings.fadeSpeed = 0;
-					settings.resizeSpeed = 0;
-					$nav_links.find('span').remove();
+		// Tweaks/fixes.
 
-				}
+			// Polyfill: Object fit.
+				if (!skel.canUse('object-fit')) {
 
-				// Body.
-					$body._resize = function() {
-						var factor = ($window.width() * $window.height()) / (1440 * 900);
-						$body.css('font-size', Math.min(Math.max(Math.floor(factor * settings.sizeFactor), settings.sizeMin), settings.sizeMax) + 'pt');
-						$main.height(panels[activePanelId].outerHeight());
-						$body._reposition();
-					};
+					$('.image[data-position]').each(function() {
 
-					$body._reposition = function() {
-						if (skel.vars.touch && (window.orientation == 0 || window.orientation == 180))
-							$wrapper.css('padding-top', Math.max((($window.height() - (panels[activePanelId].outerHeight() + $footer.outerHeight())) / 2) - $nav.height(), 30) + 'px');
-						else
-							$wrapper.css('padding-top', ((($window.height() - panels[firstPanelId].height()) / 2) - $nav.height()) + 'px');
-					};
+						var $this = $(this),
+							$img = $this.children('img');
 
-				// Panels.
-					$panels.each(function(i) {
-						var t = $(this), id = t.attr('id');
+						// Apply img as background.
+							$this
+								.css('background-image', 'url("' + $img.attr('src') + '")')
+								.css('background-position', $this.data('position'))
+								.css('background-size', 'cover')
+								.css('background-repeat', 'no-repeat');
 
-						panels[id] = t;
-
-						if (i == 0) {
-
-							firstPanelId = id;
-							activePanelId = id;
-
-						}
-						else
-							t.hide();
-
-						t._activate = function(instant) {
-
-							// Check lock state and determine whether we're already at the target.
-								if (isLocked
-								||	activePanelId == id)
-									return false;
-
-							// Lock.
-								isLocked = true;
-
-							// Change nav link (if it exists).
-								$nav_links.removeClass('active');
-								$nav_links.filter('[href="#' + id + '"]').addClass('active');
-
-							// Change hash.
-								if (i == 0)
-									window.location.hash = '#';
-								else
-									window.location.hash = '#' + id;
-
-							// Add bottom padding.
-								var x = parseInt($wrapper.css('padding-top')) +
-										panels[id].outerHeight() +
-										$nav.outerHeight() +
-										$footer.outerHeight();
-
-								if (x > $window.height())
-									$wrapper.addClass('tall');
-								else
-									$wrapper.removeClass('tall');
-
-							// Fade out active panel.
-								$footer.fadeTo(settings.fadeSpeed, 0.0001);
-								panels[activePanelId].fadeOut(instant ? 0 : settings.fadeSpeed, function() {
-
-									// Set new active.
-										activePanelId = id;
-
-										// Force scroll to top.
-											$hbw.animate({
-												scrollTop: 0
-											}, settings.resizeSpeed, 'swing');
-
-										// Reposition.
-											$body._reposition();
-
-										// Resize main to height of new panel.
-											$main.animate({
-												height: panels[activePanelId].outerHeight()
-											}, instant ? 0 : settings.resizeSpeed, 'swing', function() {
-
-												// Fade in new active panel.
-													$footer.fadeTo(instant ? 0 : settings.fadeSpeed, 1.0);
-													panels[activePanelId].fadeIn(instant ? 0 : settings.fadeSpeed, function() {
-
-														// Unlock.
-															isLocked = false;
-
-													});
-											});
-
-								});
-
-						};
+						// Hide img.
+							$img
+								.css('opacity', '0');
 
 					});
 
-				// Nav + Jumplinks.
-					$nav_links.add($jumplinks).click(function(e) {
-						var t = $(this), href = t.attr('href'), id;
+				}
 
-						if (href.substring(0,1) == '#') {
+			// IE-specific fixes.
+				if (skel.vars.browser == 'ie'
+				||	skel.vars.browser == 'edge')
+					$body.addClass('is-ie');
 
-							e.preventDefault();
-							e.stopPropagation();
+		// Prioritize "important" elements on medium.
+			skel.on('+medium -medium', function() {
+				$.prioritize(
+					'.important\\28 medium\\29',
+					skel.breakpoint('medium').active
+				);
+			});
 
-							id = href.substring(1);
+		// Menu.
+			$('#menu')
+				.append('<a href="#menu" class="close"></a>')
+				.appendTo($body)
+				.panel({
+					delay: 500,
+					hideOnClick: true,
+					hideOnSwipe: true,
+					resetScroll: true,
+					resetForms: true,
+					side: 'right',
+					target: $body,
+					visibleClass: 'is-menu-visible'
+				});
 
-							if (id in panels)
-								panels[id]._activate();
+		// Scrolly.
+			$('.scrolly').scrolly();
 
-						}
+		// Parallax background.
+
+			// Disable parallax on IE (smooth scrolling is jerky), and on mobile platforms (= better performance).
+				if (skel.vars.browser == 'ie'
+				||	skel.vars.browser == 'edge'
+				||	skel.vars.mobile)
+					settings.parallax = false;
+
+			if (settings.parallax) {
+
+				var $dummy = $(), $bg;
+
+				$window
+					.on('scroll.transit_parallax', function() {
+
+						// Adjust background position.
+						// Note: If you've removed the background overlay image, remove the "top left, " bit.
+							$bg.css('background-position', 'top left, center ' + (-1 * (parseInt($window.scrollTop()) / settings.parallaxFactor)) + 'px');
+
+					})
+					.on('resize.transit_parallax', function() {
+
+						// If we're in a situation where we need to temporarily disable parallax, do so.
+						// Note: If you've removed the background overlay image, remove the "top left, " bit.
+							if (skel.breakpoint('medium').active) {
+
+								$body.css('background-position', 'top left, top center');
+								$bg = $dummy;
+
+							}
+
+						// Otherwise, continue as normal.
+							else
+								$bg = $body;
+
+						// Trigger scroll handler.
+							$window.triggerHandler('scroll.transit_parallax');
 
 					});
 
-				// Window.
-					$window
-						.resize(function() {
+				$window.on('load.transit_parallax', function() {
+					setTimeout(function() {
+						$window.trigger('resize.transit_parallax');
+					}, 0);
+				});
 
-							if (!isLocked)
-								$body._resize();
+			}
 
-						});
+		// Slider.
+			$('.slider-wrapper').each(function() {
 
-					$window
-						.on('orientationchange', function() {
+				var $this = $(this),
+					$slider = $this.children('.slider'),
+					$indicators = $('<div class="indicators" />').appendTo($this),
+					$slide = $slider.children(),
+					$indicator,
+					locked = false,
+					i;
 
-							if (!isLocked)
-								$body._reposition();
+				// Indicators.
+					for (i=0; i < $slide.length; i++)
+						$('<a href="#">' + (i + 1) + '</a>')
+							.appendTo($indicators);
 
-						});
+					$indicator = $indicators.children('a')
+						.each(function(index) {
 
-					if (skel.vars.IEVersion < 9)
-						$window
-							.on('resize', function() {
-								$wrapper.css('min-height', $window.height());
+							var	$this = $(this),
+								$target = $slide.eq(index);
+
+							$this.on('click', function(event, initial) {
+
+								var	x;
+
+								// Prevent default.
+									event.stopPropagation();
+									event.preventDefault();
+
+								// Already selected?
+									if ($this.hasClass('active'))
+										return;
+
+								// Locked?
+									if (locked)
+										return;
+
+									locked = true;
+
+								// Calculate scroll position.
+									x = ($target.position().left + $slider.scrollLeft()) - (Math.max(0, $slider.width() - $target.outerWidth()) / 2);
+
+								// Scroll.
+									$slide.addClass('inactive');
+									$indicator.removeClass('active');
+									$this.addClass('active');
+
+									if (initial) {
+
+										$slider.scrollLeft(x);
+										$target.removeClass('inactive');
+										locked = false;
+
+									}
+									else {
+
+										$slider
+											.stop()
+											.animate(
+												{ scrollLeft: x },
+												settings.sliderSpeed,
+												'swing'
+											);
+
+										setTimeout(function() {
+											$target.removeClass('inactive');
+											locked = false;
+										}, Math.max(0, settings.sliderSpeed - 250));
+
+									}
+
 							});
 
-				// Fix: Placeholder polyfill.
-					$('form').placeholder();
+						});
 
-				// Prioritize "important" elements on mobile.
-					skel.on('+mobile -mobile', function() {
-						$.prioritize(
-							'.important\\28 mobile\\29',
-							skel.breakpoint('mobile').active
-						);
+				// Slides.
+					$slide.on('click', function(event, initial) {
+
+						var $this = $(this);
+
+						$indicator.eq($this.index())
+							.trigger('click', initial);
+
 					});
 
-				// CSS polyfills (IE<9).
-					if (skel.vars.IEVersion < 9)
-						$(':last-child').addClass('last-child');
+					$slide.on('click', 'a', function(event) {
 
-				// Init.
-					$window
-						.trigger('resize');
+						if ($(this).parents('article').hasClass('inactive'))
+							event.preventDefault();
 
-					if (hash && hash in panels)
-						panels[hash]._activate(true);
+					});
 
-					$wrapper.fadeTo(400, 1.0);
+				// Re-position on resize.
+					$window.on('resize.transit_slider', function(event) {
 
-			})
-			.on('-desktop', function() {
+						var $target = $slide.not('.inactive');
 
-				window.setTimeout(function() {
-					location.reload(true);
-				}, 50);
+						$slider.scrollLeft(($target.position().left + $slider.scrollLeft()) - (Math.max(0, $slider.width() - $target.outerWidth()) / 2));
+
+					});
+
+				// Initialize.
+					$slide.filter('.initial')
+						.trigger('click', true);
 
 			});
 
